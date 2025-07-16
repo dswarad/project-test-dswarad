@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ideas - Suitmedia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body class="bg-white text-gray-800">
+
+  <!-- Header -->
+  <header id="mainHeader"
+    class="fixed top-0 w-full bg-white/70 backdrop-blur z-50 transition-transform duration-300 shadow">
+    <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
+      <div class="text-orange-500 font-bold">suitmedia</div>
+      <nav class="space-x-6">
+        <a href="#" class="text-gray-600 hover:text-orange-500">Work</a>
+        <a href="#" class="text-gray-600 hover:text-orange-500">About</a>
+        <a href="#" class="text-orange-500 font-semibold border-b-2 border-orange-500">Ideas</a>
+        <a href="#" class="text-gray-600 hover:text-orange-500">Careers</a>
+        <a href="#" class="text-gray-600 hover:text-orange-500">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Banner -->
+  <section class="relative h-[300px] mt-[64px] overflow-hidden">
+    <div id="bannerImage" class="absolute inset-0 bg-cover bg-center"
+      style="background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1500&q=80');">
+    </div>
+    <div class="relative z-10 flex items-center justify-center h-full text-white">
+      <div class="text-center">
+        <h1 class="text-4xl font-bold">Ideas</h1>
+        <p class="mt-2">Where all our great things begin</p>
+      </div>
+    </div>
+    <div class="absolute bottom-0 left-0 w-full h-[50px] bg-white rotate-[-3deg] origin-top-right"></div>
+  </section>
+
+  <!-- Filter Controls -->
+  <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
+    <div>Showing <span id="startItem">1</span> - <span id="endItem">10</span> of <span id="totalItem">100</span></div>
+    <div class="flex space-x-4">
+      <select id="showPerPage" class="border p-2 rounded">
+        <option value="10">10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+      </select>
+      <select id="sortBy" class="border p-2 rounded">
+        <option value="-published_at">Newest</option>
+        <option value="published_at">Oldest</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Posts Grid -->
+  <div id="postGrid" class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 px-6 pb-10"></div>
+
+  <!-- Pagination -->
+  <div id="pagination" class="flex justify-center space-x-2 pb-10"></div>
+
+  <script>
+    let currentPage = parseInt(localStorage.getItem('currentPage')) || 1;
+    let pageSize = parseInt(localStorage.getItem('pageSize')) || 10;
+    let sortBy = localStorage.getItem('sortBy') || '-published_at';
+
+    const API_URL = 'http://localhost:3000/api/ideas';
+
+
+    async function fetchPosts() {
+      const url = `${API_URL}?page[number]=${currentPage}&page[size]=${pageSize}&append[]=small_image&append[]=medium_image&sort=${sortBy}`;
+
+      try {
+        const res = await fetch(url);
+        const contentType = res.headers.get("content-type");
+
+        if (!res.ok || !contentType.includes("application/json")) {
+          throw new Error("Invalid response from server");
+        }
+
+        const json = await res.json();
+
+        if (!json?.data || !json?.meta) {
+          throw new Error("Unexpected JSON structure");
+        }
+
+        renderPosts(json.data);
+        renderPagination(json.meta);
+
+      } catch (err) {
+        console.error("Fetch error:", err.message);
+        document.getElementById('postGrid').innerHTML = `
+          <div class="col-span-4 text-center text-red-600 font-semibold">Gagal memuat data.</div>
+        `;
+      }
+    }
+    function renderPosts(posts) {
+      const container = document.getElementById('postGrid');
+      container.innerHTML = '';
+      const baseImageUrl = "https://suitmedia-backend.suitdev.com";
+
+      posts.forEach(post => {
+        const date = new Date(post.published_at).toLocaleDateString('en-GB', {
+          day: 'numeric', month: 'long', year: 'numeric'
+        });
+        const image = post.small_image?.url ? `${baseImageUrl}${post.small_image.url}` : 'https://via.placeholder.com/400x300';
+
+        container.innerHTML += `
+      <div class="shadow rounded overflow-hidden bg-white">
+        <img src="${image}" loading="lazy" class="w-full aspect-[4/3] object-cover">
+        <div class="p-4">
+          <p class="text-xs text-gray-400 mb-1">${date}</p>
+          <h2 class="text-sm font-medium line-clamp-3">${post.title}</h2>
+        </div>
+      </div>`;
+      });
+    }
+    
+    function renderPagination(meta) {
+      const pagination = document.getElementById('pagination');
+      const totalPages = meta.pageCount;
+      pagination.innerHTML = '';
+      for (let i = 1; i <= totalPages; i++) {
+        pagination.innerHTML += `
+        <button onclick="goToPage(${i})" class="px-3 py-1 rounded ${i === currentPage ? 'bg-orange-500 text-white' : 'bg-gray-200'}">${i}</button>`;
+      }
+      document.getElementById('startItem').textContent = meta.from;
+      document.getElementById('endItem').textContent = meta.to;
+      document.getElementById('totalItem').textContent = meta.total;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      localStorage.setItem('currentPage', page);
+      fetchPosts();
+    }
+
+    document.getElementById('sortBy').addEventListener('change', (e) => {
+      sortBy = e.target.value;
+      localStorage.setItem('sortBy', sortBy);
+      currentPage = 1;
+      fetchPosts();
+    });
+
+    document.getElementById('showPerPage').addEventListener('change', (e) => {
+      pageSize = parseInt(e.target.value);
+      localStorage.setItem('pageSize', pageSize);
+      currentPage = 1;
+      fetchPosts();
+    });
+
+    fetchPosts();
+
+    // Header show/hide
+    let lastScrollTop = 0;
+    const header = document.getElementById('mainHeader');
+    window.addEventListener('scroll', () => {
+      const current = window.pageYOffset;
+      header.style.transform = current > lastScrollTop ? 'translateY(-100%)' : 'translateY(0)';
+      lastScrollTop = current;
+    });
+
+    // Parallax
+    window.addEventListener('scroll', () => {
+      const banner = document.getElementById('bannerImage');
+      banner.style.transform = `translateY(${window.scrollY * 0.5}px)`;
+    });
+  </script>
+</body>
+
+</html>
