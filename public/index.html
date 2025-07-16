@@ -47,7 +47,7 @@
     <div class="absolute bottom-0 left-0 w-full h-[50px] bg-white rotate-[-3deg] origin-top-right"></div>
   </section>
 
-  <!-- Filter Controls -->
+  <!-- Filter -->
   <div class="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
     <div>Showing <span id="startItem">1</span> - <span id="endItem">10</span> of <span id="totalItem">100</span></div>
     <div class="flex space-x-4">
@@ -161,7 +161,7 @@
 
     fetchPosts();
 
-    // Header show/hide
+    // Header show atau hide
     let lastScrollTop = 0;
     const header = document.getElementById('mainHeader');
     window.addEventListener('scroll', () => {
@@ -170,7 +170,7 @@
       lastScrollTop = current;
     });
 
-    // Parallax
+    // Effect Parallax Gambar
     window.addEventListener('scroll', () => {
       const banner = document.getElementById('bannerImage');
       banner.style.transform = `translateY(${window.scrollY * 0.5}px)`;
