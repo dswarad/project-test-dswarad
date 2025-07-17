@@ -74,7 +74,8 @@
     let pageSize = parseInt(localStorage.getItem('pageSize')) || 10;
     let sortBy = localStorage.getItem('sortBy') || '-published_at';
 
-    const API_URL = 'http://localhost:3000/api/ideas';
+   const API_URL = '/api/ideas';
+
 
 
     async function fetchPosts() {
